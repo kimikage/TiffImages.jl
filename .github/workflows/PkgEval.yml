@@ -1,0 +1,39 @@
+name: PkgEval
+on:
+  push:
+    branches:
+    - master
+    tags:
+    - 'v*'
+  pull_request:
+    branches:
+    - master
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: 'JuliaCI/PkgEval.jl'
+          path: PkgEval
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: nightly
+          arch: x64
+      - uses: julia-actions/cache@v2
+      - run: |
+          cd PkgEval
+          # Enable perf events for rr
+          echo 0 | sudo tee /proc/sys/kernel/perf_event_paranoid > /dev/null
+          # Enable ptrace-attach to any process. This lets us get more data when tests fail.
+          echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope > /dev/null
+          # Disable AppArmor restrictions on user namespaces, which our tests need to use
+          (echo 0 | sudo tee /proc/sys/kernel/apparmor_restrict_unprivileged_userns) > /dev/null || true
+          julia --project -e "import Pkg; Pkg.instantiate()"
+          # znver2,-pku,-vpclmulqdq,-vaes
+          sed -i 's/config_args\.\.\./config_args..., julia_flags=["--cpu-target=generic"]/' bin/test_package.jl
+          julia --project bin/test_package.jl --rr=false --name=TiffImages --path="${{ github.workspace }}"
+        env:
+          JULIA_CPU_TARGET: znver2

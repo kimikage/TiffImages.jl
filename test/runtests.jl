@@ -1,3 +1,11 @@
+if get(ENV, "JULIA_PKGEVAL", "false") == "false"
+    using Pkg
+    Pkg.add(PackageSpec(path=joinpath(@__DIR__, "..")))
+    Pkg.instantiate()
+end
+
+@show Base.JLOptions()
+
 using ColorTypes
 using ColorVectorSpace
 using Documenter
@@ -65,7 +73,7 @@ end
     img = TiffImages.load(filepath)
     @test size(img) == (619, 858)
     @test eltype(img) == RGB{Float16}
-    
+
     # Efficient convert method
     img_cvt = convert(Array{eltype(img), ndims(img)}, img)
     @test img_cvt === img.data
@@ -76,7 +84,7 @@ end
     img = TiffImages.load(filepath)
     @test size(img) == (378, 504)
     @test eltype(img) == Gray{N0f8}
-    
+
     # Efficient convert method
     img_cvt = convert(Array{eltype(img), ndims(img)}, img)
     @test img_cvt === img.data
@@ -112,7 +120,7 @@ end
     img = TiffImages.load(filepath)
     @test size(img) == (378, 504)
     @test eltype(img) == Gray{N7f1}
-    
+
     # Efficient convert method
     img_cvt = convert(Array{eltype(img), ndims(img)}, img)
     @test img_cvt === img.data
@@ -199,7 +207,7 @@ end
 @testset "Issue #69" begin
     rawarray = Gray.(zeros(10, 10, 2))
     ifds = [TiffImages.IFD(UInt64), TiffImages.IFD(UInt64)]
-    # test that the constructor can handle small images using 64bit offsets 
+    # test that the constructor can handle small images using 64bit offsets
     @test size(TiffImages.DenseTaggedImage(rawarray, ifds)) == size(rawarray)
 end
 
